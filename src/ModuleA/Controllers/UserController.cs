@@ -47,11 +47,14 @@ public class UserController : ControllerBase
 
     public async Task<User?> GetUserByIdDirectAsync(int id)
     {
-        return await _userService.GetUserByIdAsync(id);
+        var contractUser = await _userService.GetUserByIdAsync(id);
+        if (contractUser == null) return null;
+        return new User { Id = contractUser.Id, Name = contractUser.Name, Email = contractUser.Email, CreatedAt = contractUser.CreatedAt };
     }
 
     public async Task<List<User>> GetAllUsersDirectAsync()
     {
-        return await _userService.GetAllUsersAsync();
+        var contractUsers = await _userService.GetAllUsersAsync();
+        return contractUsers.Select(u => new User { Id = u.Id, Name = u.Name, Email = u.Email, CreatedAt = u.CreatedAt }).ToList();
     }
 }

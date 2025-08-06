@@ -18,7 +18,7 @@ public class UserService : IUserService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public Task<User?> GetUserByIdAsync(int id)
+    public Task<ModuleA.Contracts.Models.User?> GetUserByIdAsync(int id)
     {
         var user = _users.FirstOrDefault(u => u.Id == id);
         
@@ -29,19 +29,20 @@ public class UserService : IUserService
             Console.WriteLine($"UserService: Getting user {id}, User-Agent: {userAgent}");
         }
         
-        return Task.FromResult(user);
+        return Task.FromResult<ModuleA.Contracts.Models.User?>(user);
     }
 
-    public Task<List<User>> GetAllUsersAsync()
+    public Task<List<ModuleA.Contracts.Models.User>> GetAllUsersAsync()
     {
-        return Task.FromResult(_users.ToList());
+        return Task.FromResult(_users.Cast<ModuleA.Contracts.Models.User>().ToList());
     }
 
-    public Task<User> CreateUserAsync(User user)
+    public Task<ModuleA.Contracts.Models.User> CreateUserAsync(ModuleA.Contracts.Models.User user)
     {
-        user.Id = _users.Max(u => u.Id) + 1;
-        user.CreatedAt = DateTime.UtcNow;
-        _users.Add(user);
-        return Task.FromResult(user);
+        var localUser = new User { Name = user.Name, Email = user.Email };
+        localUser.Id = _users.Max(u => u.Id) + 1;
+        localUser.CreatedAt = DateTime.UtcNow;
+        _users.Add(localUser);
+        return Task.FromResult<ModuleA.Contracts.Models.User>(localUser);
     }
 }
