@@ -1,9 +1,13 @@
 using Microsoft.Extensions.Http.Resilience;
 using Worker.Services;
+using Shared.Common.Extensions;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddHostedService<WorkerService>();
+
+// Add shared common services (includes weather API client)
+builder.Services.AddSharedCommon();
 
 builder.Services.AddHttpClient<UserApiClient>(client =>
 {

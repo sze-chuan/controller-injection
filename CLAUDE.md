@@ -4,13 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a .NET 8 modular monolith demonstration project showing how to structure a system with both direct controller injection and separate worker services. The solution consists of five projects:
+This is a .NET 8 modular monolith demonstration project showing how to structure a system with both direct controller injection and separate worker services. The solution consists of six projects:
 
 - **WebApi.Host** (`src/WebApi.Host/`): Main ASP.NET Core Web API host that orchestrates both modules
 - **ModuleA** (`src/ModuleA/`): User management module with `UserController` and `UserService`
 - **ModuleB** (`src/ModuleB/`): Order management module that directly injects ModuleA's `UserController`
 - **ModuleA.Contracts** (`src/ModuleA.Contracts/`): Shared contracts library containing models and interfaces
 - **Worker** (`src/Worker/`): Standalone background service that calls ModuleA via HTTP
+- **Shared.Common** (`src/Shared.Common/`): Cross-cutting concerns library for external API clients
 
 ## Key Architecture Patterns
 
@@ -49,6 +50,22 @@ public async Task<User?> GetUserByIdAsync(int id, CancellationToken cancellation
 }
 ```
 
+### 3. Shared Common Library Pattern (ModuleB + Worker → External APIs)
+- **Shared.Common** library provides cross-cutting concerns for external API integrations
+- Both ModuleB and Worker reference this library to share common HTTP clients
+- Includes `WeatherApiClient` for external weather service integration
+- Configured with Microsoft.Extensions.Http.Resilience for consistent error handling
+- Demonstrates DRY principle for shared external dependencies
+
+Example usage:
+```csharp
+// In ModuleB/Services/OrderService.cs
+public OrderService(UserController userController, IWeatherApiClient weatherApiClient)
+
+// In Worker/Services/WorkerService.cs  
+public WorkerService(..., IWeatherApiClient weatherApiClient, ...)
+```
+
 ## Development Commands
 
 ### Build and Run
@@ -76,6 +93,7 @@ dotnet restore
 
 # Build specific projects
 dotnet build src/ModuleA.Contracts
+dotnet build src/Shared.Common
 dotnet build src/ModuleA
 dotnet build src/ModuleB
 dotnet build src/WebApi.Host
@@ -92,8 +110,9 @@ Each module provides an extension method for DI registration:
 
 - **ModuleA**: `services.AddModuleA()` in `ModuleAExtensions.cs:9-15`
   - Registers `IUserService`, `UserService`, and crucially `UserController` as scoped
-- **ModuleB**: `services.AddModuleB()` in `ModuleBExtensions.cs:8-13`
-  - Registers `IOrderService` and `OrderService`
+- **ModuleB**: `services.AddModuleB()` in `ModuleBExtensions.cs:8-16`
+  - Registers `IOrderService`, `OrderService`, and shared common services
+  - Calls `AddSharedCommon()` to register weather API client
 
 Both are called from `Program.cs:11-12` in the host project.
 
@@ -101,7 +120,14 @@ Both are called from `Program.cs:11-12` in the host project.
 The Worker service registers:
 - `WorkerService` as a hosted service
 - `UserApiClient` with configured HTTP client, retry policies, and circuit breaker
+- `AddSharedCommon()` for weather API client with resilience patterns
 - Configuration from `appsettings.json` including API base URL and worker intervals
+
+### Shared Common Registration
+The `Shared.Common.Extensions.AddSharedCommon()` method registers:
+- `IWeatherApiClient` and `WeatherApiClient` with HTTP client factory
+- Microsoft.Extensions.Http.Resilience for retry, circuit breaker, and timeout
+- Configured with weather API base URL and resilience settings
 
 ## Demo Endpoints
 
@@ -138,3 +164,7 @@ Key settings in `Worker/appsettings.json`:
 ## Target Framework
 
 .NET 8.0 with nullable reference types and implicit usings enabled across all projects.
+
+## Coding patterns
+
+- Use primary constructor when possible

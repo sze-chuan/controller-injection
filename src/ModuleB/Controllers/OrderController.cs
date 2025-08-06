@@ -7,28 +7,19 @@ namespace ModuleB.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class OrderController : ControllerBase
+public class OrderController(IOrderService orderService, UserController userController) : ControllerBase
 {
-    private readonly IOrderService _orderService;
-    private readonly UserController _userController;
-
-    public OrderController(IOrderService orderService, UserController userController)
-    {
-        _orderService = orderService;
-        _userController = userController;
-    }
-
     [HttpGet]
     public async Task<ActionResult<List<Order>>> GetAllOrders()
     {
-        var orders = await _orderService.GetOrdersByUserIdAsync(1);
+        var orders = await orderService.GetOrdersByUserIdAsync(1);
         return Ok(orders);
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<Order>> GetOrder(int id)
     {
-        var order = await _orderService.GetOrderByIdAsync(id);
+        var order = await orderService.GetOrderByIdAsync(id);
         if (order == null)
         {
             return NotFound($"Order with ID {id} not found");
@@ -39,7 +30,7 @@ public class OrderController : ControllerBase
     [HttpGet("user/{userId}")]
     public async Task<ActionResult<List<Order>>> GetOrdersByUserId(int userId)
     {
-        var orders = await _orderService.GetOrdersByUserIdAsync(userId);
+        var orders = await orderService.GetOrdersByUserIdAsync(userId);
         return Ok(orders);
     }
 
@@ -48,7 +39,7 @@ public class OrderController : ControllerBase
     {
         try
         {
-            var createdOrder = await _orderService.CreateOrderAsync(order);
+            var createdOrder = await orderService.CreateOrderAsync(order);
             return CreatedAtAction(nameof(GetOrder), new { id = createdOrder.Id }, createdOrder);
         }
         catch (ArgumentException ex)
@@ -60,7 +51,7 @@ public class OrderController : ControllerBase
     [HttpGet("demo-direct-call")]
     public async Task<ActionResult> DemoDirectControllerCall()
     {
-        var users = await _userController.GetAllUsersDirectAsync();
+        var users = await userController.GetAllUsersDirectAsync();
         
         return Ok(new
         {

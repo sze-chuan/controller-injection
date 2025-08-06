@@ -3,9 +3,8 @@ using ModuleA.Models;
 
 namespace ModuleA.Services;
 
-public class UserService : IUserService
+public class UserService(IHttpContextAccessor httpContextAccessor) : IUserService
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private static readonly List<User> _users = new()
     {
         new User { Id = 1, Name = "John Doe", Email = "john@example.com", CreatedAt = DateTime.UtcNow.AddDays(-30) },
@@ -13,16 +12,11 @@ public class UserService : IUserService
         new User { Id = 3, Name = "Bob Johnson", Email = "bob@example.com", CreatedAt = DateTime.UtcNow.AddDays(-5) }
     };
 
-    public UserService(IHttpContextAccessor httpContextAccessor)
-    {
-        _httpContextAccessor = httpContextAccessor;
-    }
-
     public Task<ModuleA.Contracts.Models.User?> GetUserByIdAsync(int id)
     {
         var user = _users.FirstOrDefault(u => u.Id == id);
         
-        var httpContext = _httpContextAccessor.HttpContext;
+        var httpContext = httpContextAccessor.HttpContext;
         if (httpContext != null && user != null)
         {
             var userAgent = httpContext.Request.Headers["User-Agent"].ToString();
