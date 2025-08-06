@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Http.Resilience;
 using Worker.Services;
 using Shared.Common.Extensions;
 
